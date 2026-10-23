@@ -42,7 +42,8 @@ function Toolbar({
         </Button>
       </SheetTrigger>
       {shownCount !== null && totalCount !== null && (
-        <p>
+        // A status region: screen readers announce the new count after each filter change.
+        <p role="status">
           <span className="font-medium tabular-nums">{shownCount.toLocaleString('en-IN')}</span> of{' '}
           <span className="tabular-nums">{totalCount.toLocaleString('en-IN')}</span> orders
         </p>

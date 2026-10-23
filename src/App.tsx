@@ -1,7 +1,9 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import DetailsPanel from './components/DetailsPanel'
+import FilterChips from './components/FilterChips'
 import LoadError from './components/LoadError'
 import LoadingState from './components/LoadingState'
+import NoResults from './components/NoResults'
 import OrdersGrid from './components/OrdersGrid'
 import Sidebar from './components/Sidebar'
 import Toolbar from './components/Toolbar'
@@ -13,7 +15,8 @@ import type { FocusedCell } from './types/grid'
 import type { Order } from './types/order'
 import type { Sort } from './types/sort'
 import { DEFAULT_PINNED_COLUMN } from './utils/columns'
-import { filterOrders, isConditionComplete } from './utils/filterOrders'
+import { removeCondition } from './utils/editFilter'
+import { filterOrders, isFilterActive } from './utils/filterOrders'
 import { DEFAULT_SORT, sortOrders, toggleSort } from './utils/sortOrders'
 
 function App() {
@@ -37,13 +40,25 @@ function App() {
   // Filtering keeps the sorted order, so editing the filter never re-sorts. Memoized because it
   // loops over 50,000 orders, which only needs to happen when the sorted list or the filter changes.
   const shownOrders = useMemo(() => filterOrders(sortedOrders, deferredFilter), [sortedOrders, deferredFilter])
-  const hasActiveFilter = deferredFilter.some((group) => group.conditions.some(isConditionComplete))
   const { selectedIds, handleRowClick, clearSelection } = useSelection(shownOrders)
   // Looked up in all orders, so the panel stays open when a filter hides its order.
   const detailsOrder = detailsOrderId === null ? undefined : sortedOrders.find((order) => order.id === detailsOrderId)
 
   function handleSort(column: keyof Order) {
     setSort((current) => toggleSort(current, column))
+  }
+
+  // "Clear all" and "Clear filters" disappear once clicked, so focus moves to the grid.
+  function clearFilter() {
+    setFilter([])
+    gridRef.current?.focus({ preventScroll: true })
+  }
+
+  function handleRemoveCondition(conditionId: string) {
+    const nextFilter = removeCondition(filter, conditionId)
+    setFilter(nextFilter)
+    // Without its last chip, the chips bar has no button left to hold focus.
+    if (!isFilterActive(nextFilter)) gridRef.current?.focus({ preventScroll: true })
   }
 
   // While the details panel is open, it follows keyboard focus from row to row.
@@ -80,10 +95,8 @@ function App() {
             onClearSelection={clearSelection}
             onPinnedColumnChange={setPinnedColumn}
           />
-          <div className="flex h-10 shrink-0 items-center border-b px-4 text-sm text-muted-foreground">
-            {!hasActiveFilter && 'No filters. Showing all orders.'}
-          </div>
-          <div className="min-h-0 flex-1">
+          <FilterChips filter={filter} onRemoveCondition={handleRemoveCondition} onClearAll={clearFilter} />
+          <div className="relative min-h-0 flex-1">
             {state.status === 'loading' && <LoadingState />}
             {state.status === 'error' && <LoadError message={state.message} onRetry={retry} />}
             {state.status === 'ready' && (
@@ -100,6 +113,9 @@ function App() {
                 onOpenDetails={setDetailsOrderId}
                 onCloseDetails={closeDetails}
               />
+            )}
+            {state.status === 'ready' && shownOrders.length === 0 && isFilterActive(deferredFilter) && (
+              <NoResults onClearFilters={clearFilter} />
             )}
           </div>
         </main>

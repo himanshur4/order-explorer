@@ -1,4 +1,4 @@
-import { type RefObject, useCallback, useEffect, useMemo, useState } from 'react'
+import { type RefObject, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { useGridKeyboard } from '../hooks/useGridKeyboard'
 import { useVirtualRows } from '../hooks/useVirtualRows'
 import type { FocusedCell } from '../types/grid'
@@ -45,9 +45,16 @@ function OrdersGrid({
   const totalWidth = columns.reduce((sum, column) => sum + column.width, 0)
   const visibleOrders = orders.slice(virtual.start, virtual.end)
 
-  // A new sort starts reading from the top, with focus on the sorted column's header.
+  // New rows (after a sort or a filter change) are read from the top. A layout effect runs before
+  // the browser paints, so the new rows are never drawn at the old scroll position, which could be
+  // past the end of a shorter list.
+  const { scrollToTop } = virtual
+  useLayoutEffect(() => {
+    scrollToTop()
+  }, [orders, scrollToTop])
+
+  // Focus goes to the sorted column's header (the effect above scrolls back to the top).
   function handleSort(column: keyof Order) {
-    gridRef.current?.scrollTo({ top: 0 })
     onSort(column)
     onFocusCell({ orderId: null, column })
     gridRef.current?.focus({ preventScroll: true })

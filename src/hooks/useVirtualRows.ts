@@ -1,4 +1,4 @@
-import { type RefObject, type UIEvent, useLayoutEffect, useState } from 'react'
+import { type RefObject, type UIEvent, useCallback, useLayoutEffect, useState } from 'react'
 import { revealOffset } from '../utils/gridNavigation'
 
 // Extra rows rendered above and below the visible area, so fast scrolling never shows a gap.
@@ -28,6 +28,13 @@ export function useVirtualRows(scrollRef: RefObject<HTMLDivElement | null>, rowC
     setFirstVisibleRow(Math.floor(event.currentTarget.scrollTop / rowHeight))
   }
 
+  // The first row is set together with the scroll position, so the next paint already shows the top rows.
+  // useCallback keeps the function the same between renders, so OrdersGrid's effect only runs when the rows change.
+  const scrollToTop = useCallback(() => {
+    scrollRef.current?.scrollTo({ top: 0 })
+    setFirstVisibleRow(0)
+  }, [scrollRef])
+
   /** Scrolls just enough to show the row with this index below the sticky header. */
   function scrollRowIntoView(index: number) {
     const element = scrollRef.current
@@ -41,5 +48,14 @@ export function useVirtualRows(scrollRef: RefObject<HTMLDivElement | null>, rowC
   // Rows that fit below the header; PageUp/PageDown move by this much.
   const pageSize = Math.max(1, Math.floor(viewportHeight / rowHeight) - 1)
 
-  return { handleScroll, scrollRowIntoView, start, end, firstVisibleRow, pageSize, totalHeight: rowCount * rowHeight }
+  return {
+    handleScroll,
+    scrollToTop,
+    scrollRowIntoView,
+    start,
+    end,
+    firstVisibleRow,
+    pageSize,
+    totalHeight: rowCount * rowHeight,
+  }
 }

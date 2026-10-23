@@ -48,7 +48,7 @@ export function formatAmount(amount: number): string {
 // IST is always UTC+5:30 (no daylight saving), so adding the offset and reading
 // the UTC parts gives IST on any computer. Intl is not used here because it
 // writes September as "Sept", which breaks the fixed-width date column.
-const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000
+export const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 /** Formats a timestamp in IST, e.g. "14 Mar 2025, 09:30". */

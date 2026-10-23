@@ -1,4 +1,5 @@
-import { type UIEvent, useLayoutEffect, useRef, useState } from 'react'
+import { type RefObject, type UIEvent, useLayoutEffect, useState } from 'react'
+import { revealOffset } from '../utils/gridNavigation'
 
 // Extra rows rendered above and below the visible area, so fast scrolling never shows a gap.
 const OVERSCAN_ROWS = 10
@@ -7,9 +8,9 @@ const OVERSCAN_ROWS = 10
  * Virtual scrolling: works out which rows fall inside the scroll container's
  * visible area, so only those (plus a few extra) need to be rendered.
  * Rows from `start` up to (not including) `end` should be drawn.
+ * Assumes a sticky header row of the same height as the rows.
  */
-export function useVirtualRows(rowCount: number, rowHeight: number) {
-  const scrollRef = useRef<HTMLDivElement>(null)
+export function useVirtualRows(scrollRef: RefObject<HTMLDivElement | null>, rowCount: number, rowHeight: number) {
   const [firstVisibleRow, setFirstVisibleRow] = useState(0)
   const [viewportHeight, setViewportHeight] = useState(0)
 
@@ -20,16 +21,25 @@ export function useVirtualRows(rowCount: number, rowHeight: number) {
     const observer = new ResizeObserver(() => setViewportHeight(element.clientHeight))
     observer.observe(element)
     return () => observer.disconnect()
-  }, [])
+  }, [scrollRef])
 
   // Storing the top row (not the pixel position) means React only re-renders when a new row scrolls in.
   function handleScroll(event: UIEvent<HTMLDivElement>) {
     setFirstVisibleRow(Math.floor(event.currentTarget.scrollTop / rowHeight))
   }
 
+  /** Scrolls just enough to show the row with this index below the sticky header. */
+  function scrollRowIntoView(index: number) {
+    const element = scrollRef.current
+    if (!element) return
+    element.scrollTop = revealOffset(index * rowHeight, rowHeight, element.scrollTop, element.clientHeight - rowHeight)
+  }
+
   const visibleRowCount = Math.ceil(viewportHeight / rowHeight)
   const start = Math.max(0, firstVisibleRow - OVERSCAN_ROWS)
   const end = Math.min(rowCount, firstVisibleRow + visibleRowCount + OVERSCAN_ROWS)
+  // Rows that fit below the header; PageUp/PageDown move by this much.
+  const pageSize = Math.max(1, Math.floor(viewportHeight / rowHeight) - 1)
 
-  return { scrollRef, handleScroll, start, end, totalHeight: rowCount * rowHeight }
+  return { handleScroll, scrollRowIntoView, start, end, firstVisibleRow, pageSize, totalHeight: rowCount * rowHeight }
 }

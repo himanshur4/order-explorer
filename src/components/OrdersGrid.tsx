@@ -1,5 +1,7 @@
-import { useMemo, useState } from 'react'
+import { type RefObject, useCallback, useEffect, useMemo, useState } from 'react'
+import { useGridKeyboard } from '../hooks/useGridKeyboard'
 import { useVirtualRows } from '../hooks/useVirtualRows'
+import type { FocusedCell } from '../types/grid'
 import type { Order } from '../types/order'
 import type { Sort } from '../types/sort'
 import { arrangeColumns, type ColumnWidths } from '../utils/columns'
@@ -14,24 +16,73 @@ type OrdersGridProps = {
   sort: Sort
   pinnedColumn: keyof Order | null
   selectedIds: Set<string>
+  focusedCell: FocusedCell | null
+  gridRef: RefObject<HTMLDivElement | null>
   onSort: (column: keyof Order) => void
   onRowClick: (orderId: string, shiftKey: boolean) => void
+  onFocusCell: (cell: FocusedCell) => void
+  onOpenDetails: (orderId: string) => void
+  onCloseDetails: () => void
 }
 
-function OrdersGrid({ orders, sort, pinnedColumn, selectedIds, onSort, onRowClick }: OrdersGridProps) {
-  const { scrollRef, handleScroll, start, end, totalHeight } = useVirtualRows(orders.length, ROW_HEIGHT)
-  // Widths the user dragged; they reset when the page reloads.
+function OrdersGrid({
+  orders,
+  sort,
+  pinnedColumn,
+  selectedIds,
+  focusedCell,
+  gridRef,
+  onSort,
+  onRowClick,
+  onFocusCell,
+  onOpenDetails,
+  onCloseDetails,
+}: OrdersGridProps) {
+  const virtual = useVirtualRows(gridRef, orders.length, ROW_HEIGHT)
   const [widths, setWidths] = useState<ColumnWidths>({})
   // Memoized so every row gets the same columns object while scrolling, which lets GridRow's memo skip them.
   const columns = useMemo(() => arrangeColumns(pinnedColumn, widths), [pinnedColumn, widths])
   const totalWidth = columns.reduce((sum, column) => sum + column.width, 0)
-  const visibleOrders = orders.slice(start, end)
+  const visibleOrders = orders.slice(virtual.start, virtual.end)
 
-  // A new sort starts reading from the top of the list.
+  // A new sort starts reading from the top, with focus on the sorted column's header.
   function handleSort(column: keyof Order) {
-    scrollRef.current?.scrollTo({ top: 0 })
+    gridRef.current?.scrollTo({ top: 0 })
     onSort(column)
+    onFocusCell({ orderId: null, column })
+    gridRef.current?.focus({ preventScroll: true })
   }
+
+  const keyboard = useGridKeyboard({
+    gridRef,
+    orders,
+    visibleOrders,
+    columns,
+    focusedCell,
+    firstVisibleRow: virtual.firstVisibleRow,
+    pageSize: virtual.pageSize,
+    scrollRowIntoView: virtual.scrollRowIntoView,
+    onFocusCell,
+    onSort: handleSort,
+    onToggleRow: (orderId) => onRowClick(orderId, false),
+    onOpenDetails,
+    onCloseDetails,
+  })
+
+  // Focus the grid once the orders have loaded, so the keyboard works straight away.
+  useEffect(() => {
+    gridRef.current?.focus({ preventScroll: true })
+  }, [gridRef])
+
+  // Kept stable while scrolling (its inputs only change on clicks and key presses), so GridRow's memo still works.
+  const handleCellClick = useCallback(
+    (orderId: string, column: keyof Order, shiftKey: boolean) => {
+      onRowClick(orderId, shiftKey)
+      onFocusCell({ orderId, column })
+      gridRef.current?.focus({ preventScroll: true })
+    },
+    [onRowClick, onFocusCell, gridRef],
+  )
 
   function handleResize(column: keyof Order, width: number) {
     setWidths((current) => ({ ...current, [column]: width }))
@@ -45,29 +96,38 @@ function OrdersGrid({ orders, sort, pinnedColumn, selectedIds, onSort, onRowClic
     })
   }
 
+  // The focused cell's ring replaces the grid's own outline; if that cell is scrolled away, the grid shows one.
+  const outlineClass =
+    keyboard.hasFocus && !keyboard.activeCellId ? 'outline-2 -outline-offset-2 outline-primary' : 'outline-none'
+
   return (
     <div
-      ref={scrollRef}
-      onScroll={handleScroll}
+      ref={gridRef}
+      tabIndex={0}
       role="grid"
       aria-label="Orders"
       aria-multiselectable="true"
       aria-rowcount={orders.length + 1}
       aria-colcount={columns.length}
-      className="h-full overflow-auto"
+      aria-activedescendant={keyboard.activeCellId}
+      onScroll={virtual.handleScroll}
+      onKeyDown={keyboard.handleKeyDown}
+      onFocus={keyboard.handleFocus}
+      onBlur={keyboard.handleBlur}
+      className={`h-full overflow-auto ${outlineClass}`}
     >
       <div role="presentation" className="min-w-full" style={{ width: totalWidth }}>
         <GridHeader
           columns={columns}
           sort={sort}
+          focusedColumn={keyboard.hasFocus && focusedCell?.orderId === null ? focusedCell.column : null}
           onSort={handleSort}
           onResize={handleResize}
           onResetWidth={handleResetWidth}
         />
-        
-        <div role="rowgroup" className="relative" style={{ height: totalHeight }}>
+        <div role="rowgroup" className="relative" style={{ height: virtual.totalHeight }}>
           {visibleOrders.map((order, offset) => {
-            const index = start + offset
+            const index = virtual.start + offset
             return (
               <GridRow
                 key={order.id}
@@ -76,7 +136,9 @@ function OrdersGrid({ orders, sort, pinnedColumn, selectedIds, onSort, onRowClic
                 rowIndex={index + 2}
                 top={index * ROW_HEIGHT}
                 selected={selectedIds.has(order.id)}
-                onRowClick={onRowClick}
+                focusedColumn={keyboard.hasFocus && focusedCell?.orderId === order.id ? focusedCell.column : null}
+                onCellClick={handleCellClick}
+                onOpenDetails={onOpenDetails}
               />
             )
           })}

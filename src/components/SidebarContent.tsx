@@ -1,4 +1,13 @@
 import { useId } from 'react'
+import { Kbd } from './ui/kbd'
+
+const SHORTCUTS: [keys: string, action: string][] = [
+  ['←↑↓→', 'move'],
+  ['Space', 'select row'],
+  ['Shift', '+ click: range'],
+  ['Enter', 'details'],
+  ['Esc', 'close details'],
+]
 
 function SidebarContent() {
   // This content is rendered both in the sidebar and in the small-screen panel, so ids must be unique.
@@ -14,6 +23,16 @@ function SidebarContent() {
           Filters
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">No filters yet.</p>
+      </section>
+      <section aria-label="Keyboard shortcuts" className="shrink-0 border-t p-4">
+        <ul className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs text-muted-foreground">
+          {SHORTCUTS.map(([keys, action]) => (
+            <li key={keys} className="flex items-center gap-1.5">
+              <Kbd className="bg-background">{keys}</Kbd>
+              {action}
+            </li>
+          ))}
+        </ul>
       </section>
     </>
   )

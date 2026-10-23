@@ -1,6 +1,7 @@
 import { memo, type MouseEvent } from 'react'
 import type { Order } from '../types/order'
 import type { GridColumn } from '../utils/columns'
+import { cellId } from '../utils/gridNavigation'
 import StatusLabel from './StatusLabel'
 
 type GridRowProps = {
@@ -9,10 +10,13 @@ type GridRowProps = {
   rowIndex: number
   top: number
   selected: boolean
-  onRowClick: (orderId: string, shiftKey: boolean) => void
+  /** The column of this row's focused cell, or null when focus is elsewhere. */
+  focusedColumn: keyof Order | null
+  onCellClick: (orderId: string, column: keyof Order, shiftKey: boolean) => void
+  onOpenDetails: (orderId: string) => void
 }
 
-function GridRow({ order, columns, rowIndex, top, selected, onRowClick }: GridRowProps) {
+function GridRow({ order, columns, rowIndex, top, selected, focusedColumn, onCellClick, onOpenDetails }: GridRowProps) {
   // Shift+click would otherwise also highlight the text between the two rows.
   function handleMouseDown(event: MouseEvent<HTMLDivElement>) {
     if (event.shiftKey) event.preventDefault()
@@ -25,19 +29,22 @@ function GridRow({ order, columns, rowIndex, top, selected, onRowClick }: GridRo
       aria-selected={selected}
       style={{ top }}
       onMouseDown={handleMouseDown}
-      onClick={(event) => onRowClick(order.id, event.shiftKey)}
+      onDoubleClick={() => onOpenDetails(order.id)}
       className={`absolute left-0 flex h-8 w-full border-b text-sm tabular-nums ${selected ? 'bg-accent' : 'bg-background hover:bg-muted'}`}
     >
       {columns.map((column) => {
         const text = column.format(order)
         const pinnedClass = column.pinned ? 'sticky left-0 border-r border-input bg-inherit' : ''
+        const focusClass = column.id === focusedColumn ? 'outline-2 -outline-offset-2 outline-primary' : ''
         return (
           <div
             key={column.id}
+            id={cellId(order.id, column.id)}
             role="gridcell"
             title={column.longText ? text : undefined}
             style={{ width: column.width }}
-            className={`flex shrink-0 items-center px-3 ${column.align === 'right' ? 'justify-end' : ''} ${pinnedClass}`}
+            onClick={(event) => onCellClick(order.id, column.id, event.shiftKey)}
+            className={`flex shrink-0 items-center px-3 ${column.align === 'right' ? 'justify-end' : ''} ${pinnedClass} ${focusClass}`}
           >
             {column.id === 'status' ? <StatusLabel status={order.status} /> : <span className="truncate">{text}</span>}
           </div>

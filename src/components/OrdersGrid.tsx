@@ -13,10 +13,12 @@ type OrdersGridProps = {
   orders: Order[]
   sort: Sort
   pinnedColumn: keyof Order | null
+  selectedIds: Set<string>
   onSort: (column: keyof Order) => void
+  onRowClick: (orderId: string, shiftKey: boolean) => void
 }
 
-function OrdersGrid({ orders, sort, pinnedColumn, onSort }: OrdersGridProps) {
+function OrdersGrid({ orders, sort, pinnedColumn, selectedIds, onSort, onRowClick }: OrdersGridProps) {
   const { scrollRef, handleScroll, start, end, totalHeight } = useVirtualRows(orders.length, ROW_HEIGHT)
   // Widths the user dragged; they reset when the page reloads.
   const [widths, setWidths] = useState<ColumnWidths>({})
@@ -49,6 +51,7 @@ function OrdersGrid({ orders, sort, pinnedColumn, onSort }: OrdersGridProps) {
       onScroll={handleScroll}
       role="grid"
       aria-label="Orders"
+      aria-multiselectable="true"
       aria-rowcount={orders.length + 1}
       aria-colcount={columns.length}
       className="h-full overflow-auto"
@@ -61,12 +64,20 @@ function OrdersGrid({ orders, sort, pinnedColumn, onSort }: OrdersGridProps) {
           onResize={handleResize}
           onResetWidth={handleResetWidth}
         />
-        {/* As tall as every row together, so the scrollbar matches 50,000 rows; only the visible ones are drawn. */}
+        
         <div role="rowgroup" className="relative" style={{ height: totalHeight }}>
           {visibleOrders.map((order, offset) => {
             const index = start + offset
             return (
-              <GridRow key={order.id} order={order} columns={columns} rowIndex={index + 2} top={index * ROW_HEIGHT} />
+              <GridRow
+                key={order.id}
+                order={order}
+                columns={columns}
+                rowIndex={index + 2}
+                top={index * ROW_HEIGHT}
+                selected={selectedIds.has(order.id)}
+                onRowClick={onRowClick}
+              />
             )
           })}
         </div>

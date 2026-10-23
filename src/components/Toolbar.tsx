@@ -1,4 +1,4 @@
-import { SlidersHorizontal } from 'lucide-react'
+import { SlidersHorizontal, X } from 'lucide-react'
 import { useId } from 'react'
 import type { Order } from '../types/order'
 import { COLUMNS } from '../utils/columns'
@@ -12,12 +12,21 @@ const NO_PIN = 'none'
 type ToolbarProps = {
   shownCount: number | null
   totalCount: number | null
+  selectedCount: number
   pinnedColumn: keyof Order | null
+  onClearSelection: () => void
   onPinnedColumnChange: (column: keyof Order | null) => void
 }
 
 // Must be rendered inside <Sheet> (see App): the Filters button opens the small-screen panel.
-function Toolbar({ shownCount, totalCount, pinnedColumn, onPinnedColumnChange }: ToolbarProps) {
+function Toolbar({
+  shownCount,
+  totalCount,
+  selectedCount,
+  pinnedColumn,
+  onClearSelection,
+  onPinnedColumnChange,
+}: ToolbarProps) {
   const pinSelectId = useId()
 
   function handlePinChange(value: string) {
@@ -38,23 +47,35 @@ function Toolbar({ shownCount, totalCount, pinnedColumn, onPinnedColumnChange }:
           <span className="tabular-nums">{totalCount.toLocaleString('en-IN')}</span> orders
         </p>
       )}
-      <div className="ml-auto flex items-center gap-2">
-        <label htmlFor={pinSelectId} className="text-muted-foreground">
-          Pin
-        </label>
-        <Select value={pinnedColumn ?? NO_PIN} onValueChange={handlePinChange}>
-          <SelectTrigger id={pinSelectId} size="sm" className="w-36">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent position="popper" align="end">
-            <SelectItem value={NO_PIN}>None</SelectItem>
-            {COLUMNS.map((column) => (
-              <SelectItem key={column.id} value={column.id}>
-                {column.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="ml-auto flex items-center gap-4">
+        {selectedCount > 0 && (
+          <div className="flex items-center gap-1">
+            <span className="font-medium text-primary tabular-nums">
+              {selectedCount.toLocaleString('en-IN')} selected
+            </span>
+            <Button variant="ghost" size="icon-xs" aria-label="Clear selection" onClick={onClearSelection}>
+              <X />
+            </Button>
+          </div>
+        )}
+        <div className="flex items-center gap-2">
+          <label htmlFor={pinSelectId} className="text-muted-foreground">
+            Pin
+          </label>
+          <Select value={pinnedColumn ?? NO_PIN} onValueChange={handlePinChange}>
+            <SelectTrigger id={pinSelectId} size="sm" className="w-36">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent position="popper" align="end">
+              <SelectItem value={NO_PIN}>None</SelectItem>
+              {COLUMNS.map((column) => (
+                <SelectItem key={column.id} value={column.id}>
+                  {column.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
     </div>
   )

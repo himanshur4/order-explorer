@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, type MouseEvent } from 'react'
 import type { Order } from '../types/order'
 import type { GridColumn } from '../utils/columns'
 import StatusLabel from './StatusLabel'
@@ -8,15 +8,25 @@ type GridRowProps = {
   columns: GridColumn[]
   rowIndex: number
   top: number
+  selected: boolean
+  onRowClick: (orderId: string, shiftKey: boolean) => void
 }
 
-function GridRow({ order, columns, rowIndex, top }: GridRowProps) {
+function GridRow({ order, columns, rowIndex, top, selected, onRowClick }: GridRowProps) {
+  // Shift+click would otherwise also highlight the text between the two rows.
+  function handleMouseDown(event: MouseEvent<HTMLDivElement>) {
+    if (event.shiftKey) event.preventDefault()
+  }
+
   return (
     <div
       role="row"
       aria-rowindex={rowIndex}
+      aria-selected={selected}
       style={{ top }}
-      className="absolute left-0 flex h-8 w-full border-b bg-background text-sm tabular-nums hover:bg-muted"
+      onMouseDown={handleMouseDown}
+      onClick={(event) => onRowClick(order.id, event.shiftKey)}
+      className={`absolute left-0 flex h-8 w-full border-b text-sm tabular-nums ${selected ? 'bg-accent' : 'bg-background hover:bg-muted'}`}
     >
       {columns.map((column) => {
         const text = column.format(order)

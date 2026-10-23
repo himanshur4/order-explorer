@@ -6,6 +6,7 @@ import Sidebar from './components/Sidebar'
 import Toolbar from './components/Toolbar'
 import { Sheet } from './components/ui/sheet'
 import { useOrders } from './hooks/useOrders'
+import { useSelection } from './hooks/useSelection'
 import type { Order } from './types/order'
 import type { Sort } from './types/sort'
 import { DEFAULT_PINNED_COLUMN } from './utils/columns'
@@ -20,6 +21,7 @@ function App() {
 
   // Sorting 50,000 orders is expensive, so it only re-runs when the data or the sort changes.
   const sortedOrders = useMemo(() => (state.status === 'ready' ? sortOrders(state.orders, sort) : []), [state, sort])
+  const { selectedIds, handleRowClick, clearSelection } = useSelection(sortedOrders)
 
   function handleSort(column: keyof Order) {
     setSort((current) => toggleSort(current, column))
@@ -43,7 +45,9 @@ function App() {
           <Toolbar
             shownCount={orderCount}
             totalCount={orderCount}
+            selectedCount={selectedIds.size}
             pinnedColumn={pinnedColumn}
+            onClearSelection={clearSelection}
             onPinnedColumnChange={setPinnedColumn}
           />
           <div className="flex h-10 shrink-0 items-center border-b px-4 text-sm text-muted-foreground">
@@ -53,7 +57,14 @@ function App() {
             {state.status === 'loading' && <LoadingState />}
             {state.status === 'error' && <LoadError message={state.message} onRetry={retry} />}
             {state.status === 'ready' && (
-              <OrdersGrid orders={sortedOrders} sort={sort} pinnedColumn={pinnedColumn} onSort={handleSort} />
+              <OrdersGrid
+                orders={sortedOrders}
+                sort={sort}
+                pinnedColumn={pinnedColumn}
+                selectedIds={selectedIds}
+                onSort={handleSort}
+                onRowClick={handleRowClick}
+              />
             )}
           </div>
         </main>

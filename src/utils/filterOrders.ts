@@ -29,6 +29,11 @@ export function filterOrders(orders: Order[], filter: Filter): Order[] {
   return orders.filter((order) => groups.every((matchers) => matchers.some((matches) => matches(order))))
 }
 
+/** False while a condition is not filled in enough to be used, so it is ignored. */
+export function isConditionComplete(condition: Condition): boolean {
+  return toMatcher(condition) !== null
+}
+
 // The typed values are read here once per filter change, not once per order.
 function toMatcher(condition: Condition): Matcher | null {
   switch (condition.kind) {

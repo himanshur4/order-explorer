@@ -2,10 +2,15 @@ export type TextField = 'id' | 'customerName' | 'customerEmail' | 'notes'
 export type NumberField = 'amount' | 'itemCount'
 export type DateField = 'createdAt' | 'updatedAt'
 export type OptionField = 'status' | 'region' | 'channel' | 'paymentMethod' | 'priority'
+export type FilterField = TextField | NumberField | DateField | OptionField
 
-export type TextOperator = 'contains' | 'notContains' | 'equals'
-export type NumberOperator = 'equals' | 'greaterThan' | 'lessThan' | 'between'
-export type DateOperator = 'before' | 'after' | 'between'
+export const TEXT_OPERATORS = ['contains', 'notContains', 'equals'] as const
+export const NUMBER_OPERATORS = ['equals', 'greaterThan', 'lessThan', 'between'] as const
+export const DATE_OPERATORS = ['before', 'after', 'between'] as const
+
+export type TextOperator = (typeof TEXT_OPERATORS)[number]
+export type NumberOperator = (typeof NUMBER_OPERATORS)[number]
+export type DateOperator = (typeof DATE_OPERATORS)[number]
 
 /** The option value that stands for orders without a priority. */
 export const NO_PRIORITY = 'none'

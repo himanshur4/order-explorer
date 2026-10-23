@@ -1,16 +1,20 @@
+import SidebarContent from './SidebarContent'
+import { SheetContent, SheetDescription, SheetTitle } from './ui/sheet'
+
+// From 1024px wide the sidebar is a fixed column; below that it is hidden and the
+// same content opens in a slide-in panel. Must be rendered inside <Sheet> (see App).
 function Sidebar() {
   return (
-    <aside className="flex w-80 shrink-0 flex-col border-r bg-sidebar">
-      <h1 className="flex h-12 shrink-0 items-center border-b px-4 font-heading text-base font-semibold text-heading">
-        Orders Explorer
-      </h1>
-      <section aria-labelledby="filters-heading" className="flex-1 overflow-y-auto p-4">
-        <h2 id="filters-heading" className="text-xs font-semibold tracking-wide text-heading uppercase">
-          Filters
-        </h2>
-        <p className="mt-2 text-sm text-muted-foreground">No filters yet.</p>
-      </section>
-    </aside>
+    <>
+      <aside className="hidden w-80 shrink-0 flex-col border-r bg-sidebar lg:flex">
+        <SidebarContent />
+      </aside>
+      <SheetContent side="left" className="gap-0 bg-sidebar p-0">
+        <SheetTitle className="sr-only">Filters</SheetTitle>
+        <SheetDescription className="sr-only">Choose which orders the grid shows.</SheetDescription>
+        <SidebarContent />
+      </SheetContent>
+    </>
   )
 }
 

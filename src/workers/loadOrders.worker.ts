@@ -7,7 +7,7 @@ export type LoaderMessage =
   | { type: 'ready'; orders: Order[] }
   | { type: 'error'; message: string }
 
-// This runs in a Web Worker, so parsingJSON and cleaning records never blocks the page.
+// This runs in a Web Worker, so parsing JSON and cleaning records never blocks the page.
 async function loadOrders(): Promise<LoaderMessage> {
   try {
     const response = await fetch('/orders.json')

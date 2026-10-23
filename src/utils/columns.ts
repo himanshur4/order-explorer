@@ -12,13 +12,18 @@ import {
 export type Column = {
   id: keyof Order
   label: string
-  /** Default width in pixels. */
   width: number
   align: 'left' | 'right'
-  /** Text that may be cut short in the grid; the full value shows on hover. */
   longText?: boolean
   format: (order: Order) => string
 }
+
+export type GridColumn = Column & { pinned: boolean }
+
+export type ColumnWidths = Partial<Record<keyof Order, number>>
+
+/** Order ID stays visible when scrolling sideways, unless the user picks another column. */
+export const DEFAULT_PINNED_COLUMN: keyof Order = 'id'
 
 /** The grid's columns, in display order. */
 export const COLUMNS: Column[] = [
@@ -68,3 +73,14 @@ export const COLUMNS: Column[] = [
   },
   { id: 'notes', label: 'Notes', width: 320, align: 'left', longText: true, format: (order) => order.notes },
 ]
+
+
+export function arrangeColumns(pinnedColumn: keyof Order | null, widths: ColumnWidths): GridColumn[] {
+  const pinned = COLUMNS.filter((column) => column.id === pinnedColumn)
+  const others = COLUMNS.filter((column) => column.id !== pinnedColumn)
+  return [...pinned, ...others].map((column) => ({
+    ...column,
+    width: widths[column.id] ?? column.width,
+    pinned: column.id === pinnedColumn,
+  }))
+}

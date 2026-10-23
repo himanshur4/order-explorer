@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import DetailsPanel from './components/DetailsPanel'
 import LoadError from './components/LoadError'
 import LoadingState from './components/LoadingState'
@@ -8,16 +8,19 @@ import Toolbar from './components/Toolbar'
 import { Sheet } from './components/ui/sheet'
 import { useOrders } from './hooks/useOrders'
 import { useSelection } from './hooks/useSelection'
+import type { Filter } from './types/filter'
 import type { FocusedCell } from './types/grid'
 import type { Order } from './types/order'
 import type { Sort } from './types/sort'
 import { DEFAULT_PINNED_COLUMN } from './utils/columns'
+import { filterOrders, isConditionComplete } from './utils/filterOrders'
 import { DEFAULT_SORT, sortOrders, toggleSort } from './utils/sortOrders'
 
 function App() {
   const { state, retry } = useOrders()
   const gridRef = useRef<HTMLDivElement>(null)
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [filter, setFilter] = useState<Filter>([])
   const [sort, setSort] = useState<Sort>(DEFAULT_SORT)
   const [pinnedColumn, setPinnedColumn] = useState<keyof Order | null>(DEFAULT_PINNED_COLUMN)
   const [focusedCell, setFocusedCell] = useState<FocusedCell | null>(null)
@@ -27,7 +30,16 @@ function App() {
 
   // Sorting 50,000 orders is expensive, so it only re-runs when the data or the sort changes.
   const sortedOrders = useMemo(() => (state.status === 'ready' ? sortOrders(state.orders, sort) : []), [state, sort])
-  const { selectedIds, handleRowClick, clearSelection } = useSelection(sortedOrders)
+  // Updating the grid after a filter change (filtering, then drawing new rows) takes tens of
+  // milliseconds. The grid uses this deferred copy of the filter, so React shows each key press in
+  // the filter inputs first and updates the grid right after, skipping it while typing continues.
+  const deferredFilter = useDeferredValue(filter)
+  // Filtering keeps the sorted order, so editing the filter never re-sorts. Memoized because it
+  // loops over 50,000 orders, which only needs to happen when the sorted list or the filter changes.
+  const shownOrders = useMemo(() => filterOrders(sortedOrders, deferredFilter), [sortedOrders, deferredFilter])
+  const hasActiveFilter = deferredFilter.some((group) => group.conditions.some(isConditionComplete))
+  const { selectedIds, handleRowClick, clearSelection } = useSelection(shownOrders)
+  // Looked up in all orders, so the panel stays open when a filter hides its order.
   const detailsOrder = detailsOrderId === null ? undefined : sortedOrders.find((order) => order.id === detailsOrderId)
 
   function handleSort(column: keyof Order) {
@@ -58,10 +70,10 @@ function App() {
   return (
     <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
       <div className="flex h-dvh">
-        <Sidebar />
+        <Sidebar filter={filter} onFilterChange={setFilter} />
         <main className="flex min-w-0 flex-1 flex-col">
           <Toolbar
-            shownCount={orderCount}
+            shownCount={state.status === 'ready' ? shownOrders.length : null}
             totalCount={orderCount}
             selectedCount={selectedIds.size}
             pinnedColumn={pinnedColumn}
@@ -69,14 +81,14 @@ function App() {
             onPinnedColumnChange={setPinnedColumn}
           />
           <div className="flex h-10 shrink-0 items-center border-b px-4 text-sm text-muted-foreground">
-            No filters. Showing all orders.
+            {!hasActiveFilter && 'No filters. Showing all orders.'}
           </div>
           <div className="min-h-0 flex-1">
             {state.status === 'loading' && <LoadingState />}
             {state.status === 'error' && <LoadError message={state.message} onRetry={retry} />}
             {state.status === 'ready' && (
               <OrdersGrid
-                orders={sortedOrders}
+                orders={shownOrders}
                 sort={sort}
                 pinnedColumn={pinnedColumn}
                 selectedIds={selectedIds}

@@ -1,5 +1,8 @@
 import {
+  DATE_OPERATORS,
   NO_PRIORITY,
+  NUMBER_OPERATORS,
+  TEXT_OPERATORS,
   type DateOperator,
   type FilterField,
   type NumberOperator,
@@ -34,7 +37,16 @@ export const FILTER_FIELDS: { field: FilterField; label: string }[] = [
 // New conditions start on Status, like the first condition in the design.
 export const DEFAULT_FILTER_FIELD: FilterField = 'status'
 
-export const OPERATOR_LABELS: Record<TextOperator | NumberOperator | DateOperator, string> = {
+type Operator = TextOperator | NumberOperator | DateOperator
+
+/** The operators offered for each type of field, in the order the select lists them. */
+export const OPERATORS: Record<'text' | 'number' | 'date', readonly Operator[]> = {
+  text: TEXT_OPERATORS,
+  number: NUMBER_OPERATORS,
+  date: DATE_OPERATORS,
+}
+
+export const OPERATOR_LABELS: Record<Operator, string> = {
   contains: 'contains',
   notContains: 'does not contain',
   equals: 'equals',

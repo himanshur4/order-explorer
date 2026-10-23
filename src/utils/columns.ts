@@ -74,7 +74,6 @@ export const COLUMNS: Column[] = [
   { id: 'notes', label: 'Notes', width: 320, align: 'left', longText: true, format: (order) => order.notes },
 ]
 
-
 export function arrangeColumns(pinnedColumn: keyof Order | null, widths: ColumnWidths): GridColumn[] {
   const pinned = COLUMNS.filter((column) => column.id === pinnedColumn)
   const others = COLUMNS.filter((column) => column.id !== pinnedColumn)

@@ -1,5 +1,5 @@
 // Allowed values for the fixed-value fields. They also become the options in the filter.
-export const ORDER_STATUSES =['pending', 'processing', 'shipped', 'delivered', 'cancelled'] as const
+export const ORDER_STATUSES = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'] as const
 export const REGIONS = ['north', 'south', 'east', 'west', 'central', 'northeast'] as const
 export const CHANNELS = ['web', 'app', 'phone', 'store'] as const
 export const PAYMENT_METHODS = ['upi', 'card', 'netbanking', 'cod', 'wallet'] as const

@@ -61,7 +61,7 @@ function DetailsPanel({ order, selected, onClose }: DetailsPanelProps) {
             </span>
           )}
         </div>
-     
+
         <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
           {fields.map(([label, value]) => (
             <Fragment key={label}>
@@ -71,7 +71,7 @@ function DetailsPanel({ order, selected, onClose }: DetailsPanelProps) {
           ))}
         </dl>
         <h3 className="mt-6 text-xs font-semibold tracking-wide text-heading uppercase">Notes</h3>
-        
+
         <p className="mt-2 whitespace-pre-wrap wrap-break-word">
           {order.notes || <span className="text-muted-foreground">No notes</span>}
         </p>

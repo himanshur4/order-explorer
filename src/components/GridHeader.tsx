@@ -38,7 +38,6 @@ function GridHeader({ columns, sort, focusedColumn, onSort, onResize, onResetWid
               style={{ width: column.width }}
               className={`shrink-0 ${pinnedClass} ${focusClass}`}
             >
-              
               <button
                 type="button"
                 tabIndex={-1}

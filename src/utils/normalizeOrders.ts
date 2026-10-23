@@ -51,8 +51,7 @@ export function normalizeOrder(record: unknown): Order | null {
   const channel = readOption(record.channel, CHANNELS)
   const paymentMethod = readOption(record.paymentMethod, PAYMENT_METHODS)
   const priority = isMissing(record.priority) ? null : readOption(record.priority, PRIORITIES)
-  const itemCount =
-    typeof record.itemCount === 'number' && Number.isInteger(record.itemCount) ? record.itemCount : null
+  const itemCount = typeof record.itemCount === 'number' && Number.isInteger(record.itemCount) ? record.itemCount : null
   const notes = isMissing(record.notes) ? '' : record.notes
 
   if (

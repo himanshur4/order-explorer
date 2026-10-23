@@ -68,11 +68,12 @@ export function useGridKeyboard(options: GridKeyboardOptions) {
     }
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault()
-      if (!order) {
+      // When a filter hides every row, focus is on a row that doesn't exist and the keys do nothing.
+      if (rowIndex === HEADER_ROW) {
         options.onSort(columns[columnIndex].id)
-      } else if (event.key === ' ') {
+      } else if (order && event.key === ' ') {
         options.onToggleRow(order.id)
-      } else {
+      } else if (order) {
         options.onOpenDetails(order.id)
       }
       return

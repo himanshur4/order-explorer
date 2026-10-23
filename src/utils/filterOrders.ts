@@ -34,6 +34,11 @@ export function isConditionComplete(condition: Condition): boolean {
   return toMatcher(condition) !== null
 }
 
+/** True when at least one condition is filled in, so the filter is being applied. */
+export function isFilterActive(filter: Filter): boolean {
+  return filter.some((group) => group.conditions.some(isConditionComplete))
+}
+
 // The typed values are read here once per filter change, not once per order.
 function toMatcher(condition: Condition): Matcher | null {
   switch (condition.kind) {

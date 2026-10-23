@@ -60,6 +60,12 @@ export function formatDateTime(timestamp: number): string {
   return `${day} ${MONTHS[ist.getUTCMonth()]} ${ist.getUTCFullYear()}, ${hours}:${minutes}`
 }
 
+/** Formats a date input's "yyyy-mm-dd" like the grid's dates, e.g. "01 Mar 2026". */
+export function formatDay(day: string): string {
+  const [year, month, dayOfMonth] = day.split('-')
+  return `${dayOfMonth} ${MONTHS[Number(month) - 1]} ${year}`
+}
+
 /** "P1" to "P3", or "None" when the order has no priority. */
 export function formatPriority(priority: Priority | null): string {
   return priority === null ? 'None' : `P${priority}`

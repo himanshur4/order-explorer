@@ -23,10 +23,23 @@ export type Column = {
 /** The grid's columns, in display order. */
 export const COLUMNS: Column[] = [
   { id: 'id', label: 'Order ID', width: 136, align: 'left', format: (order) => order.id },
-  { id: 'customerName', label: 'Customer', width: 168, align: 'left', longText: true, format: (order) => order.customerName },
+  {
+    id: 'customerName',
+    label: 'Customer',
+    width: 168,
+    align: 'left',
+    longText: true,
+    format: (order) => order.customerName,
+  },
   { id: 'status', label: 'Status', width: 128, align: 'left', format: (order) => STATUS_LABELS[order.status] },
   { id: 'amount', label: 'Amount', width: 128, align: 'right', format: (order) => formatAmount(order.amount) },
-  { id: 'createdAt', label: 'Created (IST)', width: 168, align: 'left', format: (order) => formatDateTime(order.createdAt) },
+  {
+    id: 'createdAt',
+    label: 'Created (IST)',
+    width: 168,
+    align: 'left',
+    format: (order) => formatDateTime(order.createdAt),
+  },
   {
     id: 'updatedAt',
     label: 'Updated (IST)',
@@ -45,6 +58,13 @@ export const COLUMNS: Column[] = [
     format: (order) => PAYMENT_METHOD_LABELS[order.paymentMethod],
   },
   { id: 'itemCount', label: 'Items', width: 72, align: 'right', format: (order) => String(order.itemCount) },
-  { id: 'customerEmail', label: 'Email', width: 240, align: 'left', longText: true, format: (order) => order.customerEmail },
+  {
+    id: 'customerEmail',
+    label: 'Email',
+    width: 240,
+    align: 'left',
+    longText: true,
+    format: (order) => order.customerEmail,
+  },
   { id: 'notes', label: 'Notes', width: 320, align: 'left', longText: true, format: (order) => order.notes },
 ]

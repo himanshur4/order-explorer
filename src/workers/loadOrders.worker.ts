@@ -3,9 +3,7 @@ import { dedupeOrders } from '../utils/dedupeOrders'
 import { normalizeOrders } from '../utils/normalizeOrders'
 
 /** What the loader worker sends back to the page. */
-export type LoaderMessage =
-  | { type: 'ready'; orders: Order[] }
-  | { type: 'error'; message: string }
+export type LoaderMessage = { type: 'ready'; orders: Order[] } | { type: 'error'; message: string }
 
 // This runs in a Web Worker, so parsing JSON and cleaning records never blocks the page.
 async function loadOrders(): Promise<LoaderMessage> {

@@ -5,10 +5,10 @@ import { addRange, toggleId } from '../utils/selection'
 /**
  * Row selection, stored as order IDs so it survives sorting and filtering.
  * A click toggles one row; Shift+click adds every row from the last clicked one.
- * `orders` is the list in the order it is currently shown.
+ * `orders` is the list in the order it is currently shown; `initialIds` come from the link.
  */
-export function useSelection(orders: Order[]) {
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
+export function useSelection(orders: Order[], initialIds: Set<string>) {
+  const [selectedIds, setSelectedIds] = useState(initialIds)
   // The last clicked row. A ref, because remembering it never changes the screen.
   const lastClickedId = useRef<string | null>(null)
 

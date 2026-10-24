@@ -1,4 +1,5 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import BrokenLinkBanner from './components/BrokenLinkBanner'
 import DetailsPanel from './components/DetailsPanel'
 import FilterChips from './components/FilterChips'
 import LoadError from './components/LoadError'
@@ -10,22 +11,26 @@ import Toolbar from './components/Toolbar'
 import { Sheet } from './components/ui/sheet'
 import { useOrders } from './hooks/useOrders'
 import { useSelection } from './hooks/useSelection'
+import { useUrlSync } from './hooks/useUrlSync'
 import type { Filter } from './types/filter'
 import type { FocusedCell } from './types/grid'
 import type { Order } from './types/order'
 import type { Sort } from './types/sort'
-import { DEFAULT_PINNED_COLUMN } from './utils/columns'
 import { removeCondition } from './utils/editFilter'
 import { filterOrders, isFilterActive } from './utils/filterOrders'
-import { DEFAULT_SORT, sortOrders, toggleSort } from './utils/sortOrders'
+import { sortOrders, toggleSort } from './utils/sortOrders'
+import { readUrlState } from './utils/urlState'
 
 function App() {
   const { state, retry } = useOrders()
   const gridRef = useRef<HTMLDivElement>(null)
+  // The link is read once, when the page opens, and decides how the screen starts.
+  const [link] = useState(() => readUrlState(window.location.hash))
+  const [linkBroken, setLinkBroken] = useState(link.broken)
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const [filter, setFilter] = useState<Filter>([])
-  const [sort, setSort] = useState<Sort>(DEFAULT_SORT)
-  const [pinnedColumn, setPinnedColumn] = useState<keyof Order | null>(DEFAULT_PINNED_COLUMN)
+  const [filter, setFilter] = useState<Filter>(link.view.filter)
+  const [sort, setSort] = useState<Sort>(link.view.sort)
+  const [pinnedColumn, setPinnedColumn] = useState<keyof Order | null>(link.view.pinnedColumn)
   const [focusedCell, setFocusedCell] = useState<FocusedCell | null>(null)
   // The order shown in the details panel; null while the panel is closed.
   const [detailsOrderId, setDetailsOrderId] = useState<string | null>(null)
@@ -40,12 +45,18 @@ function App() {
   // Filtering keeps the sorted order, so editing the filter never re-sorts. Memoized because it
   // loops over 50,000 orders, which only needs to happen when the sorted list or the filter changes.
   const shownOrders = useMemo(() => filterOrders(sortedOrders, deferredFilter), [sortedOrders, deferredFilter])
-  const { selectedIds, handleRowClick, clearSelection } = useSelection(shownOrders)
+  const { selectedIds, handleRowClick, clearSelection } = useSelection(shownOrders, link.view.selectedIds)
+  useUrlSync({ filter, sort, pinnedColumn, selectedIds })
   // Looked up in all orders, so the panel stays open when a filter hides its order.
   const detailsOrder = detailsOrderId === null ? undefined : sortedOrders.find((order) => order.id === detailsOrderId)
 
   function handleSort(column: keyof Order) {
     setSort((current) => toggleSort(current, column))
+  }
+
+  function dismissLinkBanner() {
+    setLinkBroken(false)
+    gridRef.current?.focus({ preventScroll: true })
   }
 
   // "Clear all" and "Clear filters" disappear once clicked, so focus moves to the grid.
@@ -87,6 +98,7 @@ function App() {
       <div className="flex h-dvh">
         <Sidebar filter={filter} onFilterChange={setFilter} />
         <main className="flex min-w-0 flex-1 flex-col">
+          {linkBroken && <BrokenLinkBanner onDismiss={dismissLinkBanner} />}
           <Toolbar
             shownCount={state.status === 'ready' ? shownOrders.length : null}
             totalCount={orderCount}

@@ -60,6 +60,11 @@ export function formatDateTime(timestamp: number): string {
   return `${day} ${MONTHS[ist.getUTCMonth()]} ${ist.getUTCFullYear()}, ${hours}:${minutes}`
 }
 
+/** A timestamp in IST as "2026-09-29 16:42:41", which spreadsheets read as a date and time. */
+export function formatSortableDateTime(timestamp: number): string {
+  return new Date(timestamp + IST_OFFSET_MS).toISOString().slice(0, 19).replace('T', ' ')
+}
+
 /** Formats a date input's "yyyy-mm-dd" like the grid's dates, e.g. "01 Mar 2026". */
 export function formatDay(day: string): string {
   const [year, month, dayOfMonth] = day.split('-')

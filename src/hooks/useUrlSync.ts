@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect } from 'react'
 import type { ViewState } from '../types/view'
 import { writeUrlState } from '../utils/urlState'
 
@@ -11,14 +11,11 @@ const WRITE_DELAY_MS = 300
  * opens the same screen. The link itself is read once, when the page opens (see App).
  */
 export function useUrlSync({ filter, sort, pinnedColumn, selectedIds }: ViewState) {
-  // Writing a large selection takes a few milliseconds, so it only runs when the view changes.
-  const hash = useMemo(
-    () => writeUrlState({ filter, sort, pinnedColumn, selectedIds }),
-    [filter, sort, pinnedColumn, selectedIds],
-  )
-
   useEffect(() => {
     const timer = setTimeout(() => {
+      // Built here, once changes pause, and not while rendering: writing a large selection takes a
+      // while, and typing in a filter must not wait for it.
+      const hash = writeUrlState({ filter, sort, pinnedColumn, selectedIds })
       // The default view has no # part at all.
       const url = hash === '' ? window.location.pathname + window.location.search : hash
       try {
@@ -28,7 +25,7 @@ export function useUrlSync({ filter, sort, pinnedColumn, selectedIds }: ViewStat
       }
     }, WRITE_DELAY_MS)
     return () => clearTimeout(timer)
-  }, [hash])
+  }, [filter, sort, pinnedColumn, selectedIds])
 
   useEffect(() => {
     function handleHashChange() {

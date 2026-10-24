@@ -11,7 +11,7 @@ import {
 // (for example as React keys), so a counter is enough.
 let lastId = 0
 
-function createId(): string {
+export function createId(): string {
   lastId += 1
   return String(lastId)
 }

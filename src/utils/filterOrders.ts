@@ -89,7 +89,8 @@ function numberMatcher(condition: NumberCondition): Matcher | null {
   }
 }
 
-function parseNumber(text: string): number | null {
+/** A typed number, or null if the text is empty or not a number. */
+export function parseNumber(text: string): number | null {
   if (text.trim() === '') return null
   const number = Number(text)
   return Number.isFinite(number) ? number : null
@@ -124,7 +125,7 @@ function dateMatcher(condition: DateCondition): Matcher | null {
 }
 
 /** When a day ("yyyy-mm-dd" from a date input) starts in IST; null if empty or not a real date. */
-function istDayStart(day: string): number | null {
+export function istDayStart(day: string): number | null {
   const utcMidnight = parseTimestamp(`${day}T00:00:00Z`)
   return utcMidnight === null ? null : utcMidnight - IST_OFFSET_MS
 }

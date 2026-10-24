@@ -16,7 +16,10 @@ type ToolbarProps = {
   selectedCount: number
   /** Selected rows that the filter hides. They stay selected but are not exported. */
   hiddenSelectedCount: number
+  /** True when every row the filter shows is selected, so the toggle offers "Unselect all". */
+  allShownSelected: boolean
   pinnedColumn: keyof Order | null
+  onToggleAll: () => void
   onClearSelection: () => void
   onPinnedColumnChange: (column: keyof Order | null) => void
   onExport: () => void
@@ -28,7 +31,9 @@ function Toolbar({
   totalCount,
   selectedCount,
   hiddenSelectedCount,
+  allShownSelected,
   pinnedColumn,
+  onToggleAll,
   onClearSelection,
   onPinnedColumnChange,
   onExport,
@@ -56,6 +61,16 @@ function Toolbar({
         </p>
       )}
       <div className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-2">
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!shownCount}
+          aria-keyshortcuts="Control+A"
+          title="Ctrl+A"
+          onClick={onToggleAll}
+        >
+          {allShownSelected ? 'Unselect all' : 'Select all'}
+        </Button>
         {selectedCount + hiddenSelectedCount > 0 && (
           <div className="flex items-center gap-1">
             <span className="font-medium text-primary tabular-nums">

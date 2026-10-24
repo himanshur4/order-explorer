@@ -11,6 +11,20 @@ export function toggleId(selected: Set<string>, id: string): Set<string> {
   return next
 }
 
+/** Adds every order in `orders` to the selection. Returns a new set. */
+export function addAll(selected: Set<string>, orders: Order[]): Set<string> {
+  const next = new Set(selected)
+  for (const order of orders) next.add(order.id)
+  return next
+}
+
+/** Removes every order in `orders` from the selection; other selected orders stay. Returns a new set. */
+export function removeAll(selected: Set<string>, orders: Order[]): Set<string> {
+  const next = new Set(selected)
+  for (const order of orders) next.delete(order.id)
+  return next
+}
+
 /**
  * Adds every order from `fromId` to `toId` (both included, in the order shown) to
  * the selection. If `fromId` is no longer shown, only `toId` is added.

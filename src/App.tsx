@@ -10,6 +10,7 @@ import Sidebar from './components/Sidebar'
 import Toolbar from './components/Toolbar'
 import { Sheet } from './components/ui/sheet'
 import { useOrders } from './hooks/useOrders'
+import { useSelectAllShortcut } from './hooks/useSelectAllShortcut'
 import { useSelection } from './hooks/useSelection'
 import { useUrlSync } from './hooks/useUrlSync'
 import type { Filter } from './types/filter'
@@ -45,8 +46,12 @@ function App() {
   // Filtering keeps the sorted order, so editing the filter never re-sorts. Memoized because it
   // loops over 50,000 orders, which only needs to happen when the sorted list or the filter changes.
   const shownOrders = useMemo(() => filterOrders(sortedOrders, deferredFilter), [sortedOrders, deferredFilter])
-  const { selectedIds, handleRowClick, clearSelection } = useSelection(shownOrders, link.view.selectedIds)
+  const { selectedIds, handleRowClick, toggleAllShown, clearSelection } = useSelection(
+    shownOrders,
+    link.view.selectedIds,
+  )
   useUrlSync({ filter, sort, pinnedColumn, selectedIds })
+  useSelectAllShortcut(toggleAllShown)
   // The 200-rows rule: a selected row is counted and exported only while the filter shows it.
   // Selected rows the filter hides stay selected and are counted apart. Memoized because both
   // loop over up to 50,000 orders, which only needs to happen when the rows or the selection change.
@@ -118,7 +123,9 @@ function App() {
             totalCount={orderCount}
             selectedCount={selectedShownOrders.length}
             hiddenSelectedCount={selectedOrderCount - selectedShownOrders.length}
+            allShownSelected={shownOrders.length > 0 && selectedShownOrders.length === shownOrders.length}
             pinnedColumn={pinnedColumn}
+            onToggleAll={toggleAllShown}
             onClearSelection={clearSelection}
             onPinnedColumnChange={setPinnedColumn}
             onExport={handleExport}

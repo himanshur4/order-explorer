@@ -9,6 +9,7 @@ const SHORTCUTS: [keys: string, action: string][] = [
   ['Shift', '+ click: range'],
   ['Enter', 'details'],
   ['Esc', 'close details'],
+  ['Ctrl+A', 'select all rows'],
 ]
 
 type SidebarContentProps = {

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import type { Order } from '../types/order'
-import { addRange, toggleId } from '../utils/selection'
+import { addAll, addRange, removeAll, toggleId } from '../utils/selection'
 
 /**
  * Row selection, stored as order IDs so it survives sorting and filtering.
@@ -22,10 +22,19 @@ export function useSelection(orders: Order[], initialIds: Set<string>) {
     lastClickedId.current = orderId
   }
 
+  // Selects every shown row, or unselects them all if they already are. Rows the filter hides
+  // keep their state, like everywhere else in the selection.
+  function toggleAllShown() {
+    setSelectedIds((current) =>
+      orders.every((order) => current.has(order.id)) ? removeAll(current, orders) : addAll(current, orders),
+    )
+    lastClickedId.current = null
+  }
+
   function clearSelection() {
     setSelectedIds(new Set())
     lastClickedId.current = null
   }
 
-  return { selectedIds, handleRowClick, clearSelection }
+  return { selectedIds, handleRowClick, toggleAllShown, clearSelection }
 }

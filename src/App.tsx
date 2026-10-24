@@ -16,6 +16,8 @@ import type { Filter } from './types/filter'
 import type { FocusedCell } from './types/grid'
 import type { Order } from './types/order'
 import type { Sort } from './types/sort'
+import { buildCsv, csvFileName } from './utils/buildCsv'
+import { downloadFile } from './utils/downloadFile'
 import { removeCondition } from './utils/editFilter'
 import { filterOrders, isFilterActive } from './utils/filterOrders'
 import { sortOrders, toggleSort } from './utils/sortOrders'
@@ -47,11 +49,26 @@ function App() {
   const shownOrders = useMemo(() => filterOrders(sortedOrders, deferredFilter), [sortedOrders, deferredFilter])
   const { selectedIds, handleRowClick, clearSelection } = useSelection(shownOrders, link.view.selectedIds)
   useUrlSync({ filter, sort, pinnedColumn, selectedIds })
+  // The 200-rows rule: a selected row is counted and exported only while the filter shows it.
+  // Selected rows the filter hides stay selected and are counted apart. Memoized because both
+  // loop over up to 50,000 orders, which only needs to happen when the rows or the selection change.
+  const selectedShownOrders = useMemo(
+    () => shownOrders.filter((order) => selectedIds.has(order.id)),
+    [shownOrders, selectedIds],
+  )
+  const selectedOrderCount = useMemo(
+    () => sortedOrders.filter((order) => selectedIds.has(order.id)).length,
+    [sortedOrders, selectedIds],
+  )
   // Looked up in all orders, so the panel stays open when a filter hides its order.
   const detailsOrder = detailsOrderId === null ? undefined : sortedOrders.find((order) => order.id === detailsOrderId)
 
   function handleSort(column: keyof Order) {
     setSort((current) => toggleSort(current, column))
+  }
+
+  function handleExport() {
+    downloadFile(csvFileName(Date.now()), buildCsv(selectedShownOrders), 'text/csv;charset=utf-8')
   }
 
   function dismissLinkBanner() {
@@ -102,10 +119,12 @@ function App() {
           <Toolbar
             shownCount={state.status === 'ready' ? shownOrders.length : null}
             totalCount={orderCount}
-            selectedCount={selectedIds.size}
+            selectedCount={selectedShownOrders.length}
+            hiddenSelectedCount={selectedOrderCount - selectedShownOrders.length}
             pinnedColumn={pinnedColumn}
             onClearSelection={clearSelection}
             onPinnedColumnChange={setPinnedColumn}
+            onExport={handleExport}
           />
           <FilterChips filter={filter} onRemoveCondition={handleRemoveCondition} onClearAll={clearFilter} />
           <div className="relative min-h-0 flex-1">

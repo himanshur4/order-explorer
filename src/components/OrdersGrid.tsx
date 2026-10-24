@@ -16,11 +16,11 @@ type OrdersGridProps = {
   sort: Sort
   pinnedColumn: keyof Order | null
   selectedIds: Set<string>
-  focusedCell: FocusedCell | null
   gridRef: RefObject<HTMLDivElement | null>
   onSort: (column: keyof Order) => void
   onRowClick: (orderId: string, shiftKey: boolean) => void
-  onFocusCell: (cell: FocusedCell) => void
+  /** Called with the row that gets keyboard focus, so the details panel can follow it. */
+  onFocusRow: (orderId: string) => void
   onOpenDetails: (orderId: string) => void
   onCloseDetails: () => void
 }
@@ -30,16 +30,17 @@ function OrdersGrid({
   sort,
   pinnedColumn,
   selectedIds,
-  focusedCell,
   gridRef,
   onSort,
   onRowClick,
-  onFocusCell,
+  onFocusRow,
   onOpenDetails,
   onCloseDetails,
 }: OrdersGridProps) {
   const virtual = useVirtualRows(gridRef, orders.length, ROW_HEIGHT)
   const [widths, setWidths] = useState<ColumnWidths>({})
+  // Kept here rather than in App, so moving focus with the arrow keys only re-renders the grid.
+  const [focusedCell, setFocusedCell] = useState<FocusedCell | null>(null)
   // Memoized so every row gets the same columns object while scrolling, which lets GridRow's memo skip them.
   const columns = useMemo(() => arrangeColumns(pinnedColumn, widths), [pinnedColumn, widths])
   const totalWidth = columns.reduce((sum, column) => sum + column.width, 0)
@@ -53,10 +54,20 @@ function OrdersGrid({
     scrollToTop()
   }, [orders, scrollToTop])
 
+  // Stable while App doesn't re-render, which is the case for arrow keys while the details panel is
+  // closed: handleCellClick then stays the same and GridRow's memo skips the rows that didn't change.
+  const focusCell = useCallback(
+    (cell: FocusedCell) => {
+      setFocusedCell(cell)
+      if (cell.orderId !== null) onFocusRow(cell.orderId)
+    },
+    [onFocusRow],
+  )
+
   // Focus goes to the sorted column's header (the effect above scrolls back to the top).
   function handleSort(column: keyof Order) {
     onSort(column)
-    onFocusCell({ orderId: null, column })
+    focusCell({ orderId: null, column })
     gridRef.current?.focus({ preventScroll: true })
   }
 
@@ -69,7 +80,7 @@ function OrdersGrid({
     firstVisibleRow: virtual.firstVisibleRow,
     pageSize: virtual.pageSize,
     scrollRowIntoView: virtual.scrollRowIntoView,
-    onFocusCell,
+    onFocusCell: focusCell,
     onSort: handleSort,
     onToggleRow: (orderId) => onRowClick(orderId, false),
     onOpenDetails,
@@ -81,14 +92,15 @@ function OrdersGrid({
     gridRef.current?.focus({ preventScroll: true })
   }, [gridRef])
 
-  // Kept stable while scrolling (its inputs only change on clicks and key presses), so GridRow's memo still works.
+  // Kept stable while scrolling and moving focus (its inputs only change when App re-renders), so
+  // GridRow's memo still works.
   const handleCellClick = useCallback(
     (orderId: string, column: keyof Order, shiftKey: boolean) => {
       onRowClick(orderId, shiftKey)
-      onFocusCell({ orderId, column })
+      focusCell({ orderId, column })
       gridRef.current?.focus({ preventScroll: true })
     },
-    [onRowClick, onFocusCell, gridRef],
+    [onRowClick, focusCell, gridRef],
   )
 
   function handleResize(column: keyof Order, width: number) {

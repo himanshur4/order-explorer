@@ -13,7 +13,6 @@ import { useOrders } from './hooks/useOrders'
 import { useSelection } from './hooks/useSelection'
 import { useUrlSync } from './hooks/useUrlSync'
 import type { Filter } from './types/filter'
-import type { FocusedCell } from './types/grid'
 import type { Order } from './types/order'
 import type { Sort } from './types/sort'
 import { buildCsv, csvFileName } from './utils/buildCsv'
@@ -33,7 +32,6 @@ function App() {
   const [filter, setFilter] = useState<Filter>(link.view.filter)
   const [sort, setSort] = useState<Sort>(link.view.sort)
   const [pinnedColumn, setPinnedColumn] = useState<keyof Order | null>(link.view.pinnedColumn)
-  const [focusedCell, setFocusedCell] = useState<FocusedCell | null>(null)
   // The order shown in the details panel; null while the panel is closed.
   const [detailsOrderId, setDetailsOrderId] = useState<string | null>(null)
   const orderCount = state.status === 'ready' ? state.orders.length : null
@@ -90,9 +88,8 @@ function App() {
   }
 
   // While the details panel is open, it follows keyboard focus from row to row.
-  function handleFocusCell(cell: FocusedCell) {
-    setFocusedCell(cell)
-    if (detailsOrderId !== null && cell.orderId !== null) setDetailsOrderId(cell.orderId)
+  function handleFocusRow(orderId: string) {
+    if (detailsOrderId !== null) setDetailsOrderId(orderId)
   }
 
   function closeDetails() {
@@ -136,11 +133,10 @@ function App() {
                 sort={sort}
                 pinnedColumn={pinnedColumn}
                 selectedIds={selectedIds}
-                focusedCell={focusedCell}
                 gridRef={gridRef}
                 onSort={handleSort}
                 onRowClick={handleRowClick}
-                onFocusCell={handleFocusCell}
+                onFocusRow={handleFocusRow}
                 onOpenDetails={setDetailsOrderId}
                 onCloseDetails={closeDetails}
               />
